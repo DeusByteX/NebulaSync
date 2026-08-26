@@ -1780,21 +1780,22 @@ input, textarea {
 @media (max-width: 768px) {
   .app-container {
     grid-template-columns: 1fr;
-    grid-template-rows: 1fr var(--player-height) 65px; /* bottom row for bottom nav */
+    grid-template-rows: 1fr var(--player-height) calc(65px + env(safe-area-inset-bottom)); /* bottom row with safe area */
     height: 100vh;
+    height: 100dvh; /* Dynamic Viewport Height prevents mobile browser bar overflows */
     width: 100vw;
     overflow: hidden;
   }
   
-  /* Collapse left sidebar to bottom menu bar */
+  /* Collapse left sidebar to bottom menu bar with safe-area spacing */
   .sidebar {
     grid-row: 3;
     grid-column: 1;
     flex-direction: row;
     justify-content: space-around;
     align-items: center;
-    padding: 8px 12px;
-    height: 65px;
+    padding: 8px 12px calc(8px + env(safe-area-inset-bottom)) 12px;
+    height: calc(65px + env(safe-area-inset-bottom));
     border-right: none;
     border-top: 1px solid var(--border);
     backdrop-filter: blur(25px);

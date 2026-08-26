@@ -358,7 +358,16 @@ export default function MusicPlayer({
       />
 
       {/* Hidden YouTube Iframe Player Element (For full length songs) */}
-      <div id="yt-player-container" style={{ position: 'absolute', width: '1px', height: '1px', opacity: 0, pointerEvents: 'none', zIndex: -999 }}>
+      <div id="yt-player-container" style={{
+        position: 'fixed',
+        bottom: '0',
+        right: '0',
+        width: '200px',
+        height: '120px',
+        opacity: '0.01',
+        pointerEvents: 'none',
+        zIndex: -1
+      }}>
         <div id="yt-player-element"></div>
       </div>
 

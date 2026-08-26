@@ -1,8 +1,17 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { 
   Play, Pause, SkipForward, SkipBack, Volume2, VolumeX, 
-  RefreshCw, Shuffle, Disc, Users 
+  RefreshCw, Shuffle, Disc, Users, Sliders 
 } from 'lucide-react';
+
+const EQ_PRESETS = {
+  flat: [0, 0, 0, 0, 0],
+  bassBoost: [6, 4, 0, 0, -1],
+  vocalBoost: [-2, 0, 4, 3, 1],
+  dance: [5, 3, -1, 2, 4],
+  acoustic: [2, 1, 1, 2, 3],
+  cyberpunk: [7, -2, 1, 4, 6]
+};
 
 export default function MusicPlayer({ 
   currentTrack, 
@@ -24,8 +33,6 @@ export default function MusicPlayer({
   const [repeat, setRepeat] = useState(false);
   
   const isLockedByHost = activeRoom && activeRoom.isLocked && activeRoom.host !== user.username;
-  
-  // Track synchronization locking (prevents infinite updates)
   const isUpdatingRef = useRef(false);
 
   // YouTube Player States & Fallbacks
@@ -33,6 +40,87 @@ export default function MusicPlayer({
   const [ytPlayFailed, setYtPlayFailed] = useState(false);
   const ytPlayerRef = useRef(null);
   const ytIntervalRef = useRef(null);
+
+  // Equalizer Web Audio API States
+  const [eqGains, setEqGains] = useState([0, 0, 0, 0, 0]); // [Bass, Low-Mid, Mid, Presence, Treble]
+  const [selectedPreset, setSelectedPreset] = useState('flat');
+  const [showEqPanel, setShowEqPanel] = useState(false);
+
+  const audioCtxRef = useRef(null);
+  const sourceNodeRef = useRef(null);
+  const filtersRef = useRef([]);
+
+  // Initialize Web Audio API nodes for audio element filtering
+  const initEqualizer = () => {
+    if (audioCtxRef.current) return; // Already loaded
+
+    try {
+      const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+      const ctx = new AudioContextClass();
+      audioCtxRef.current = ctx;
+
+      const audio = audioRef.current;
+      if (!audio) return;
+
+      const source = ctx.createMediaElementSource(audio);
+      sourceNodeRef.current = source;
+
+      // Define 5 standard band frequencies (Hz)
+      const bands = [
+        { type: 'lowshelf', frequency: 60 },
+        { type: 'peaking', frequency: 230, Q: 1.0 },
+        { type: 'peaking', frequency: 910, Q: 1.0 },
+        { type: 'peaking', frequency: 4000, Q: 1.0 },
+        { type: 'highshelf', frequency: 14000 }
+      ];
+
+      let lastNode = source;
+      const filters = bands.map((band, idx) => {
+        const filter = ctx.createBiquadFilter();
+        filter.type = band.type;
+        filter.frequency.setValueAtTime(band.frequency, ctx.currentTime);
+        if (band.Q) filter.Q.setValueAtTime(band.Q, ctx.currentTime);
+        filter.gain.setValueAtTime(eqGains[idx], ctx.currentTime);
+        
+        lastNode.connect(filter);
+        lastNode = filter;
+        return filter;
+      });
+
+      lastNode.connect(ctx.destination);
+      filtersRef.current = filters;
+      console.log('Web Audio Equalizer node chain connected successfully.');
+    } catch (e) {
+      console.warn('Web Audio Equalizer bypass (CORS / gesture restriction):', e.message);
+    }
+  };
+
+  // Update frequency filters dynamically whenever gain array updates
+  useEffect(() => {
+    if (filtersRef.current.length === 5 && audioCtxRef.current) {
+      eqGains.forEach((gain, index) => {
+        const filter = filtersRef.current[index];
+        if (filter) {
+          filter.gain.setValueAtTime(gain, audioCtxRef.current.currentTime);
+        }
+      });
+    }
+  }, [eqGains]);
+
+  const handlePresetChange = (presetName) => {
+    setSelectedPreset(presetName);
+    const gains = EQ_PRESETS[presetName];
+    if (gains) {
+      setEqGains([...gains]);
+    }
+  };
+
+  const handleBandGainChange = (index, val) => {
+    const newGains = [...eqGains];
+    newGains[index] = val;
+    setEqGains(newGains);
+    setSelectedPreset('custom');
+  };
 
   // Reset YouTube failure flag whenever a new track loads
   useEffect(() => {
@@ -91,7 +179,6 @@ export default function MusicPlayer({
             }
           },
           onError: (event) => {
-            // Error codes: 2 (invalid video id), 5 (HTML5 error), 100 (not found/removed), 101/150 (not embeddable)
             console.warn('YouTube Player encountered an error code:', event.data, '. Automatically falling back to HTML5 preview stream!');
             setYtPlayFailed(true);
           }
@@ -194,6 +281,10 @@ export default function MusicPlayer({
         audio.volume = isMuted ? 0 : volume;
 
         if (isPlaying) {
+          initEqualizer();
+          if (audioCtxRef.current && audioCtxRef.current.state === 'suspended') {
+            audioCtxRef.current.resume();
+          }
           audio.play().catch(err => {
             console.warn('Playback error on fallback audio:', err.message);
           });
@@ -285,6 +376,10 @@ export default function MusicPlayer({
 
   const handleTogglePlay = () => {
     if (!currentTrack) return;
+    initEqualizer();
+    if (audioCtxRef.current && audioCtxRef.current.state === 'suspended') {
+      audioCtxRef.current.resume();
+    }
     onPlayPause(!isPlaying);
   };
 
@@ -497,6 +592,17 @@ export default function MusicPlayer({
           </div>
         )}
 
+        {/* Futuristic Equalizer Sliders Trigger Button */}
+        <button 
+          className={`player-control-btn ${showEqPanel ? 'active' : ''}`}
+          onClick={() => setShowEqPanel(!showEqPanel)}
+          title="Configure Audio Equalizer (EQ)"
+          style={{ color: showEqPanel ? 'var(--primary)' : 'var(--text-muted)' }}
+        >
+          <Sliders size={18} />
+        </button>
+
+        {/* Volume HUD bar */}
         <div className="volume-bar">
           <button onClick={toggleMute} style={{ color: 'var(--text-muted)' }}>
             {isMuted || volume === 0 ? <VolumeX size={18} /> : <Volume2 size={18} />}
@@ -530,6 +636,124 @@ export default function MusicPlayer({
           </div>
         </div>
       </div>
+
+      {/* EQUALIZER FLOATING GLASS CARD PANEL */}
+      {showEqPanel && (
+        <div style={{
+          position: 'fixed',
+          bottom: '110px',
+          right: '24px',
+          width: '320px',
+          backgroundColor: 'rgba(14, 8, 28, 0.95)',
+          border: '2px solid var(--border-neon)',
+          boxShadow: 'var(--neon-glow)',
+          borderRadius: '16px',
+          padding: '20px',
+          zIndex: 99,
+          backdropFilter: 'blur(20px)',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '16px',
+          animation: 'slide-in 0.25s ease'
+        }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Sliders size={16} style={{ color: 'var(--primary)' }} />
+              <span style={{ fontSize: '0.9rem', fontFamily: 'var(--font-display)', color: 'var(--primary)', fontWeight: 'bold' }}>Cyber Deck EQ</span>
+            </div>
+            <button 
+              onClick={() => setShowEqPanel(false)}
+              style={{ color: 'var(--text-muted)', fontSize: '0.8rem', border: 'none', background: 'none', cursor: 'pointer' }}
+            >
+              Close
+            </button>
+          </div>
+
+          {/* Presets Select */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+            <label style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>EQ Profile Preset</label>
+            <select
+              value={selectedPreset}
+              onChange={(e) => handlePresetChange(e.target.value)}
+              style={{
+                width: '100%',
+                padding: '8px 10px',
+                borderRadius: '6px',
+                backgroundColor: 'rgba(0,0,0,0.5)',
+                border: '1px solid var(--border)',
+                color: 'white',
+                fontSize: '0.8rem',
+                outline: 'none',
+                cursor: 'pointer'
+              }}
+            >
+              <option value="flat">Flat (Bypassed)</option>
+              <option value="bassBoost">Bass Booster</option>
+              <option value="vocalBoost">Vocal Booster</option>
+              <option value="dance">Dance & Electronic</option>
+              <option value="acoustic">Acoustic</option>
+              <option value="cyberpunk">Cyberpunk Sizzle</option>
+              <option value="custom">Custom Configuration</option>
+            </select>
+          </div>
+
+          {/* Equalizer Gain Bands Grids */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', height: '140px', padding: '10px 0' }}>
+            {['60Hz', '230Hz', '910Hz', '4kHz', '14kHz'].map((label, idx) => {
+              const gain = eqGains[idx];
+              return (
+                <div key={label} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', flexGrow: 1 }}>
+                  <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>{gain > 0 ? `+${gain}` : gain}dB</span>
+                  <div style={{ height: '100px', width: '6px', backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: '3px', position: 'relative' }}>
+                    <input
+                      type="range"
+                      min="-12"
+                      max="12"
+                      step="1"
+                      value={gain}
+                      onChange={(e) => handleBandGainChange(idx, parseInt(e.target.value))}
+                      style={{
+                        position: 'absolute',
+                        transform: 'rotate(-90deg)',
+                        transformOrigin: 'center',
+                        width: '100px',
+                        height: '6px',
+                        top: '47px',
+                        left: '-47px',
+                        opacity: 0,
+                        zIndex: 3,
+                        cursor: 'ns-resize'
+                      }}
+                    />
+                    {/* Visual representation of slider track */}
+                    <div style={{
+                      position: 'absolute',
+                      bottom: 0,
+                      left: 0,
+                      width: '6px',
+                      height: `${((gain + 12) / 24) * 100}%`,
+                      backgroundColor: 'var(--primary)',
+                      boxShadow: 'var(--neon-glow)',
+                      borderRadius: '3px'
+                    }} />
+                    <div style={{
+                      position: 'absolute',
+                      bottom: `calc(${((gain + 12) / 24) * 100}% - 4px)`,
+                      left: '-2px',
+                      width: '10px',
+                      height: '10px',
+                      borderRadius: '50%',
+                      backgroundColor: 'white',
+                      boxShadow: 'var(--neon-glow)'
+                    }} />
+                  </div>
+                  <span style={{ fontSize: '0.6rem', fontWeight: 'bold', color: 'white' }}>{label}</span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

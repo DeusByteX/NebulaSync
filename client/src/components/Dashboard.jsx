@@ -48,22 +48,146 @@ export default function Dashboard({
     }
   }, [chatMessages, view]);
 
-  // Load Real-time Trending Top Charts & New Releases on component mount
+  const LOCAL_FALLBACK_TRACKS = [
+    {
+      trackId: "trend-fallback-1",
+      title: "Nebula Synth Vibe",
+      artist: "SoundHelix 1",
+      album: "Space Odyssey Vol. 1",
+      coverArt: "https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?q=80&w=300&auto=format&fit=crop",
+      audioUrl: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3",
+      durationMs: 372000,
+      source: "studio"
+    },
+    {
+      trackId: "trend-fallback-2",
+      title: "Solar Winds",
+      artist: "SoundHelix 2",
+      album: "Space Odyssey Vol. 1",
+      coverArt: "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?q=80&w=300&auto=format&fit=crop",
+      audioUrl: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3",
+      durationMs: 423000,
+      source: "studio"
+    },
+    {
+      trackId: "trend-fallback-3",
+      title: "Supernova Pulse",
+      artist: "SoundHelix 3",
+      album: "Space Odyssey Vol. 2",
+      coverArt: "https://images.unsplash.com/photo-1498038432885-c6f3f1b912ee?q=80&w=300&auto=format&fit=crop",
+      audioUrl: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3",
+      durationMs: 302000,
+      source: "studio"
+    },
+    {
+      trackId: "trend-fallback-4",
+      title: "Starlight Horizon",
+      artist: "SoundHelix 4",
+      album: "Space Odyssey Vol. 2",
+      coverArt: "https://images.unsplash.com/photo-1470225620780-dba8ba36b745?q=80&w=300&auto=format&fit=crop",
+      audioUrl: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3",
+      durationMs: 302000,
+      source: "studio"
+    },
+    {
+      trackId: "trend-fallback-5",
+      title: "Cosmic Echoes",
+      artist: "SoundHelix 5",
+      album: "Quantum Tunes",
+      coverArt: "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?q=80&w=300&auto=format&fit=crop",
+      audioUrl: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-5.mp3",
+      durationMs: 362000,
+      source: "studio"
+    },
+    {
+      trackId: "trend-fallback-6",
+      title: "Dark Matter Rhythm",
+      artist: "SoundHelix 6",
+      album: "Quantum Tunes",
+      coverArt: "https://images.unsplash.com/photo-1506157786151-b8491531f063?q=80&w=300&auto=format&fit=crop",
+      audioUrl: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-6.mp3",
+      durationMs: 582000,
+      source: "studio"
+    }
+  ];
+
+  // Helper to parse public Apple RSS feeds on client
+  const mapAppleFeed = (results, sourceTag) => {
+    return results.map(item => ({
+      trackId: `${sourceTag}-${item.id}`,
+      title: item.name,
+      artist: item.artistName,
+      album: item.collectionName || 'Single Chart',
+      coverArt: item.artworkUrl100 ? item.artworkUrl100.replace('100x100bb', '400x400bb') : 'https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?q=80&w=300&auto=format&fit=crop',
+      audioUrl: '',
+      durationMs: 240000,
+      source: 'chart'
+    }));
+  };
+
+  // Load Real-time Trending Top Charts & New Releases on component mount (With Direct Client Failovers)
   useEffect(() => {
     setLoadingFeeds(true);
-    Promise.all([
-      fetch(`${getBackendUrl()}/api/music/trending`).then(res => res.json()).catch(() => ({ results: [] })),
-      fetch(`${getBackendUrl()}/api/music/new-releases`).then(res => res.json()).catch(() => ({ results: [] }))
-    ])
-      .then(([trendingData, newData]) => {
-        if (trendingData.results) {
-          setTrendingTracks(trendingData.results);
+
+    const loadTrending = async () => {
+      // 1. Try custom Express backend first
+      try {
+        const res = await fetch(`${getBackendUrl()}/api/music/trending`);
+        const data = await res.json();
+        if (data.results && data.results.length > 0) {
+          setTrendingTracks(data.results);
+          return;
         }
-        if (newData.results) {
-          setNewReleases(newData.results);
+      } catch (e) {
+        console.warn('Backend trending feed failed, attempting direct Apple Music RSS fetch...', e.message);
+      }
+
+      // 2. Try direct client-side Apple Music RSS fetch (Bypasses Mixed Content limits since HTTPS)
+      try {
+        const res = await fetch('https://rss.applemediaservices.com/api/v2/us/music/most-played/24/songs.json');
+        const data = await res.json();
+        if (data.feed && data.feed.results) {
+          setTrendingTracks(mapAppleFeed(data.feed.results, 'trend'));
+          return;
         }
-      })
-      .catch((err) => console.error('Failed to load dynamic feeds:', err))
+      } catch (e) {
+        console.warn('Direct Apple Music RSS trending feed failed, falling back to local files:', e.message);
+      }
+
+      // 3. Fallback: use local high-quality mock database
+      setTrendingTracks(LOCAL_FALLBACK_TRACKS);
+    };
+
+    const loadNewReleases = async () => {
+      // 1. Try custom Express backend first
+      try {
+        const res = await fetch(`${getBackendUrl()}/api/music/new-releases`);
+        const data = await res.json();
+        if (data.results && data.results.length > 0) {
+          setNewReleases(data.results);
+          return;
+        }
+      } catch (e) {
+        console.warn('Backend new releases feed failed, attempting direct Apple Music RSS fetch...', e.message);
+      }
+
+      // 2. Try direct client-side Apple Music RSS fetch
+      try {
+        const res = await fetch('https://rss.applemediaservices.com/api/v2/us/music/new-releases/24/songs.json');
+        const data = await res.json();
+        if (data.feed && data.feed.results) {
+          setNewReleases(mapAppleFeed(data.feed.results, 'new'));
+          return;
+        }
+      } catch (e) {
+        console.warn('Direct Apple Music RSS new releases feed failed, falling back to local files:', e.message);
+      }
+
+      // 3. Fallback: use local high-quality mock database
+      setNewReleases(LOCAL_FALLBACK_TRACKS);
+    };
+
+    Promise.all([loadTrending(), loadNewReleases()])
       .finally(() => setLoadingFeeds(false));
   }, []);
 

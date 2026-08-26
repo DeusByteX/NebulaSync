@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { 
   Play, Pause, SkipForward, SkipBack, Volume2, VolumeX, 
-  RefreshCw, Shuffle, Disc, Users, Sliders, ChevronDown, Maximize2 
+  RefreshCw, Shuffle, Disc, Users, Sliders, ChevronDown, Maximize2, Heart 
 } from 'lucide-react';
 
 const EQ_PRESETS = {
@@ -46,28 +46,30 @@ export default function MusicPlayer({
   const [selectedPreset, setSelectedPreset] = useState('flat');
   const [showEqPanel, setShowEqPanel] = useState(false);
   const [showMobileFullPlayer, setShowMobileFullPlayer] = useState(false);
+  const [isLiked, setIsLiked] = useState(false);
 
   const audioCtxRef = useRef(null);
   const sourceNodeRef = useRef(null);
   const filtersRef = useRef([]);
 
-  // Initialize Web Audio API nodes for audio element filtering
+  // Initialize Web Audio API nodes for audio element filtering (Works on desktop & supported mobile browsers)
   const initEqualizer = () => {
-    if (audioCtxRef.current) return; // Already loaded
-
-    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-    if (isMobile) {
-      console.log('Mobile device detected. Bypassing Web Audio routing to prevent CORS/silent playback blocks.');
+    if (audioCtxRef.current) {
+      if (audioCtxRef.current.state === 'suspended') {
+        audioCtxRef.current.resume().catch(() => {});
+      }
       return;
     }
 
     try {
       const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+      if (!AudioContextClass) return;
+
       const ctx = new AudioContextClass();
       audioCtxRef.current = ctx;
 
       const audio = audioRef.current;
-      if (!audio) return;
+      if (!audio || !audio.src) return;
 
       const source = ctx.createMediaElementSource(audio);
       sourceNodeRef.current = source;
@@ -797,19 +799,86 @@ export default function MusicPlayer({
             </button>
           </div>
 
-          {/* Large Album Art */}
-          <div className="mobile-np-art-container">
-            <img 
-              className="mobile-np-art"
-              src={currentTrack.coverArt} 
-              alt={currentTrack.title} 
-            />
+          {/* Interactive Spinning Vinyl Disc Artwork */}
+          <div className="mobile-np-art-container" style={{ position: 'relative' }}>
+            <div style={{
+              position: 'relative',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
+            }}>
+              <img 
+                className={`mobile-np-art ${isPlaying ? 'spinning-disc' : ''}`}
+                src={currentTrack.coverArt} 
+                alt={currentTrack.title}
+                style={{
+                  animation: isPlaying ? 'spin 12s linear infinite' : 'none',
+                  borderRadius: '50%',
+                  border: '4px solid rgba(0, 255, 204, 0.4)',
+                  boxShadow: 'var(--neon-glow), 0 0 40px rgba(0,0,0,0.9)'
+                }}
+              />
+              {/* Vinyl Groove Rings & Center Spindle Hole */}
+              <div style={{
+                position: 'absolute',
+                width: '40px',
+                height: '40px',
+                borderRadius: '50%',
+                backgroundColor: '#03000a',
+                border: '3px solid var(--primary)',
+                boxShadow: 'var(--neon-glow)',
+                pointerEvents: 'none',
+                zIndex: 3
+              }} />
+            </div>
           </div>
 
-          {/* Song Info */}
-          <div className="mobile-np-info">
-            <div className="mobile-np-song-title">{currentTrack.title}</div>
-            <div className="mobile-np-song-artist">{currentTrack.artist}</div>
+          {/* Real-time Bouncing Neon Frequency Equalizer Bars */}
+          <div style={{
+            display: 'flex',
+            justify: 'center',
+            alignItems: 'flex-end',
+            gap: '5px',
+            height: '28px',
+            margin: '10px 0'
+          }}>
+            {[40, 75, 100, 60, 90, 45, 80, 65, 95, 50, 70, 85].map((height, idx) => (
+              <div
+                key={idx}
+                style={{
+                  width: '4px',
+                  height: isPlaying ? `${height}%` : '20%',
+                  background: idx % 2 === 0 ? 'var(--primary)' : 'var(--secondary)',
+                  boxShadow: idx % 2 === 0 ? 'var(--neon-glow)' : 'var(--pink-glow)',
+                  borderRadius: '2px',
+                  transition: 'height 0.25s ease',
+                  animation: isPlaying ? `eqBounce 0.8s ease-in-out ${idx * 0.08}s infinite alternate` : 'none'
+                }}
+              />
+            ))}
+          </div>
+
+          {/* Song Info & Interactive Heart Like Button */}
+          <div className="mobile-np-info" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div style={{ overflow: 'hidden', flexGrow: 1 }}>
+              <div className="mobile-np-song-title">{currentTrack.title}</div>
+              <div className="mobile-np-song-artist">{currentTrack.artist}</div>
+            </div>
+            <button
+              onClick={() => setIsLiked(!isLiked)}
+              style={{
+                background: 'none',
+                border: 'none',
+                color: isLiked ? '#ff007f' : 'var(--text-muted)',
+                cursor: 'pointer',
+                padding: '8px',
+                filter: isLiked ? 'drop-shadow(0 0 8px #ff007f)' : 'none',
+                transition: 'all 0.2s ease'
+              }}
+              title={isLiked ? 'Liked' : 'Like song'}
+            >
+              <Heart size={24} fill={isLiked ? '#ff007f' : 'none'} />
+            </button>
           </div>
 
           {/* Interactive Timeline Seeker */}

@@ -54,6 +54,12 @@ export default function MusicPlayer({
   const initEqualizer = () => {
     if (audioCtxRef.current) return; // Already loaded
 
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    if (isMobile) {
+      console.log('Mobile device detected. Bypassing Web Audio routing to prevent CORS/silent playback blocks.');
+      return;
+    }
+
     try {
       const AudioContextClass = window.AudioContext || window.webkitAudioContext;
       const ctx = new AudioContextClass();
@@ -447,6 +453,7 @@ export default function MusicPlayer({
       {/* HTML5 Audio Tag (Used as dynamic preview fallback) */}
       <audio 
         ref={audioRef}
+        crossOrigin="anonymous"
         onTimeUpdate={handleTimeUpdate}
         onLoadedMetadata={handleLoadedMetadata}
         onEnded={handleAudioEnded}

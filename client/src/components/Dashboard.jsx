@@ -347,16 +347,15 @@ export default function Dashboard({
             {loadingFeeds && trendingTracks.length === 0 ? (
               <div style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>Loading global charts...</div>
             ) : (
-              <div className="cards-grid" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: '16px' }}>
+             <div className="quick-vibes-grid">
                 {trendingTracks.slice(0, 6).map((track) => (
                   <div 
-                    className="music-card" 
+                    className="music-card quick-vibe-card" 
                     key={track.trackId}
-                    style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: '14px', padding: '10px' }}
                     onClick={() => handlePlayClick(track)}
                   >
-                    <img src={track.coverArt} alt={track.title} style={{ width: '56px', height: '56px', borderRadius: '4px', objectFit: 'cover' }} />
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', overflow: 'hidden', flexGrow: 1 }}>
+                    <img src={track.coverArt} alt={track.title} />
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', overflow: 'hidden', flexGrow: 1, width: '100%' }}>
                       <div className="music-card-title" style={{ fontSize: '0.85rem' }}>{track.title}</div>
                       <div className="music-card-subtitle" style={{ fontSize: '0.75rem' }}>{track.artist}</div>
                     </div>

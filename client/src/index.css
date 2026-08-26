@@ -1835,15 +1835,55 @@ input, textarea {
     display: none; /* Hide footer/logout to save space */
   }
 
+  /* Force 2-column card grid reflows on mobile */
+  .cards-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 12px !important;
+  }
+  
+  .shelf-title {
+    font-size: 1.05rem !important;
+    margin-bottom: 12px !important;
+  }
+  
+  .music-card {
+    padding: 10px !important;
+    gap: 8px !important;
+    border-radius: 8px !important;
+  }
+
+  .music-card-title {
+    font-size: 0.8rem !important;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .music-card-subtitle {
+    font-size: 0.7rem !important;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .shelf-section {
+    margin-bottom: 24px !important;
+  }
+
   /* Reflow player bar on mobile screen heights */
   .music-player-bar {
-    padding: 8px 16px;
-    height: 100px;
+    padding: 6px 12px !important;
+    height: 90px !important;
     display: flex;
     flex-direction: column;
     gap: 6px;
     justify-content: center;
     border-top: 1px solid var(--border);
+  }
+
+  .player-song-img {
+    width: 44px !important;
+    height: 44px !important;
   }
 
   .player-left {
@@ -1865,12 +1905,26 @@ input, textarea {
   }
 
   .player-controls {
-    gap: 20px;
+    gap: 16px !important;
+  }
+
+  .player-control-btn svg {
+    width: 18px !important;
+    height: 18px !important;
+  }
+
+  .play-btn svg {
+    width: 18px !important;
+    height: 18px !important;
+  }
+
+  .eq-wave-container {
+    display: none !important; /* Hide visualizer on mobile to save vertical space */
   }
   
   /* Reflow main view */
   .main-content {
-    padding: 16px;
+    padding: 12px !important;
     overflow-y: auto;
   }
   
@@ -1912,6 +1966,48 @@ input, textarea {
   .modal-content {
     width: 92%;
     padding: 24px 16px;
+  }
+}
+
+/* Quick Vibes Shelf Responsive Styles */
+.quick-vibes-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 16px;
+}
+
+.quick-vibe-card {
+  flex-direction: row !important;
+  align-items: center !important;
+  padding: 10px !important;
+  gap: 14px !important;
+}
+
+.quick-vibe-card img {
+  width: 56px !important;
+  height: 56px !important;
+  border-radius: 4px !important;
+  object-fit: cover !important;
+}
+
+@media (max-width: 768px) {
+  .quick-vibes-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 12px !important;
+  }
+  
+  .quick-vibe-card {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    padding: 10px !important;
+    gap: 8px !important;
+  }
+
+  .quick-vibe-card img {
+    width: 100% !important;
+    height: 110px !important;
+    border-radius: 6px !important;
+    object-fit: cover !important;
   }
 }
 

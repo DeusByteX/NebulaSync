@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { 
   Play, Pause, SkipForward, SkipBack, Volume2, VolumeX, 
-  RefreshCw, Shuffle, Disc, Users, Sliders 
+  RefreshCw, Shuffle, Disc, Users, Sliders, ChevronDown, Maximize2 
 } from 'lucide-react';
 
 const EQ_PRESETS = {
@@ -45,6 +45,7 @@ export default function MusicPlayer({
   const [eqGains, setEqGains] = useState([0, 0, 0, 0, 0]); // [Bass, Low-Mid, Mid, Presence, Treble]
   const [selectedPreset, setSelectedPreset] = useState('flat');
   const [showEqPanel, setShowEqPanel] = useState(false);
+  const [showMobileFullPlayer, setShowMobileFullPlayer] = useState(false);
 
   const audioCtxRef = useRef(null);
   const sourceNodeRef = useRef(null);
@@ -473,8 +474,12 @@ export default function MusicPlayer({
         <div id="yt-player-element"></div>
       </div>
 
-      {/* Left: Album cover details */}
-      <div className="player-left">
+      {/* Left: Album cover details (Tapping expands mobile full-screen player) */}
+      <div 
+        className="player-left"
+        onClick={() => currentTrack && setShowMobileFullPlayer(true)}
+        style={{ cursor: currentTrack ? 'pointer' : 'default' }}
+      >
         {currentTrack ? (
           <>
             <img 
@@ -758,6 +763,130 @@ export default function MusicPlayer({
                 </div>
               );
             })}
+          </div>
+        </div>
+      )}
+
+      {/* FULLSCREEN MOBILE NOW-PLAYING OVERLAY (Spotify / Apple Music Style) */}
+      {showMobileFullPlayer && currentTrack && (
+        <div className="mobile-now-playing-overlay">
+          {/* Header Bar */}
+          <div className="mobile-np-header">
+            <button 
+              className="mobile-np-dismiss-btn"
+              onClick={() => setShowMobileFullPlayer(false)}
+            >
+              <ChevronDown size={24} />
+            </button>
+            <span className="mobile-np-title-badge">Now Playing</span>
+            <button 
+              className="mobile-np-dismiss-btn"
+              onClick={() => {
+                setShowMobileFullPlayer(false);
+                setShowEqPanel(true);
+              }}
+            >
+              <Sliders size={18} />
+            </button>
+          </div>
+
+          {/* Large Album Art */}
+          <div className="mobile-np-art-container">
+            <img 
+              className="mobile-np-art"
+              src={currentTrack.coverArt} 
+              alt={currentTrack.title} 
+            />
+          </div>
+
+          {/* Song Info */}
+          <div className="mobile-np-info">
+            <div className="mobile-np-song-title">{currentTrack.title}</div>
+            <div className="mobile-np-song-artist">{currentTrack.artist}</div>
+          </div>
+
+          {/* Interactive Timeline Seeker */}
+          <div className="mobile-np-timeline">
+            <div className="slider-container">
+              <input 
+                type="range"
+                min={0}
+                max={duration || 30}
+                step={0.1}
+                value={localProgress}
+                onChange={handleSliderChange}
+                onMouseUp={handleSliderMouseUp}
+                onTouchEnd={handleSliderMouseUp}
+                disabled={isLockedByHost}
+                style={{
+                  width: '100%',
+                  opacity: 0,
+                  position: 'absolute',
+                  zIndex: 2,
+                  cursor: 'pointer'
+                }}
+              />
+              <div className="slider-track" style={{ height: '6px', borderRadius: '3px' }}>
+                <div 
+                  className="slider-fill" 
+                  style={{ 
+                    width: `${progressPercent}%`,
+                    backgroundColor: 'var(--primary)' 
+                  }} 
+                />
+                <div 
+                  className="slider-handle" 
+                  style={{ 
+                    left: `${progressPercent}%` 
+                  }} 
+                />
+              </div>
+            </div>
+            <div className="mobile-np-time-labels">
+              <span>{formatSecs(localProgress)}</span>
+              <span>{formatSecs(duration)}</span>
+            </div>
+          </div>
+
+          {/* Media Playback Controls */}
+          <div className="mobile-np-controls">
+            <button 
+              className={`player-control-btn ${shuffle ? 'active' : ''}`}
+              onClick={() => setShuffle(!shuffle)}
+            >
+              <Shuffle size={20} />
+            </button>
+
+            <button 
+              className="player-control-btn"
+              onClick={onPrev}
+              disabled={isLockedByHost}
+            >
+              <SkipBack size={26} />
+            </button>
+
+            <button 
+              className="mobile-np-play-btn"
+              onClick={handleTogglePlay}
+              disabled={isLockedByHost}
+            >
+              {isPlaying ? <Pause size={28} /> : <Play size={28} style={{ marginLeft: '3px' }} />}
+            </button>
+
+            <button 
+              className="player-control-btn"
+              onClick={onNext}
+              disabled={isLockedByHost}
+            >
+              <SkipForward size={26} />
+            </button>
+
+            <button 
+              className={`player-control-btn ${repeat ? 'active' : ''}`}
+              onClick={() => setRepeat(!repeat)}
+            >
+              <RefreshCw size={20} />
+            </button>
           </div>
         </div>
       )}

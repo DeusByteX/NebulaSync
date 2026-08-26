@@ -480,48 +480,36 @@ export default function Dashboard({
                   No tracks found for "{searchQuery}"
                 </div>
               ) : (
-                <div className="cards-grid">
+                <div style={{ display: 'flex', flexDirection: 'column' }}>
                   {searchResults.map((track) => (
-                    <div className="music-card" key={track.trackId} onClick={() => handlePlayClick(track)}>
-                      <div className="music-card-img-container">
-                        <img className="music-card-img" src={track.coverArt} alt={track.title} />
-                        
-                        {/* Display custom badge if the result is a YouTube web stream/remix */}
-                        {track.source === 'remix' && (
-                          <span style={{
-                            position: 'absolute',
-                            top: '8px',
-                            left: '8px',
-                            backgroundColor: '#ff007f',
-                            color: 'white',
-                            fontSize: '0.6rem',
-                            fontWeight: 'bold',
-                            padding: '3px 6px',
-                            borderRadius: '4px',
-                            zIndex: 3
-                          }}>
-                            Remix / Web
-                          </span>
-                        )}
-
-                        <button className="play-hover-btn">
-                          <Play />
-                        </button>
+                    <div 
+                      className="track-row" 
+                      key={track.trackId} 
+                      onClick={() => handlePlayClick(track)}
+                    >
+                      <img className="track-row-art" src={track.coverArt || 'https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?q=80&w=100&auto=format&fit=crop'} alt={track.title} />
+                      <div className="track-row-info">
+                        <div className="track-row-title">{track.title}</div>
+                        <div className="track-row-artist">{track.artist}</div>
                       </div>
-                      <div className="music-card-title">{track.title}</div>
-                      <div className="music-card-subtitle">{track.artist}</div>
                       {activeRoom && (
                         <button 
-                          className="invite-btn" 
-                          style={{ marginTop: 'auto', alignSelf: 'flex-start' }}
+                          className="invite-btn"
+                          style={{ padding: '4px 10px', fontSize: '0.75rem', flexShrink: 0 }}
                           onClick={(e) => {
                             e.stopPropagation();
                             handleAddToQueueClick(track);
                           }}
                         >
-                          + Jam Queue
+                          + Jam
                         </button>
                       )}
+                      <button 
+                        className="play-hover-btn" 
+                        style={{ position: 'static', opacity: 1, transform: 'none', width: '36px', height: '36px', flexShrink: 0 }}
+                      >
+                        <Play size={16} />
+                      </button>
                     </div>
                   ))}
                 </div>

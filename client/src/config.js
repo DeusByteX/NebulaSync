@@ -6,12 +6,8 @@ export const getBackendUrl = () => {
     return 'http://localhost:3001';
   }
 
-  // If using secure HTTPS client, standard mixed content blocks unsecure port 3001 fetches
-  if (window.location.protocol === 'https:') {
-    // If we have a custom server on Render/Railway, user saves it. Default to localhost for testing.
-    return 'http://localhost:3001';
-  }
-  return `http://${window.location.hostname}:3001`;
+  // On production Vercel deploys, use relative path '' so requests route to Vercel Serverless API functions!
+  return '';
 };
 
 export const setBackendUrl = (url) => {

@@ -245,46 +245,7 @@ export default function Dashboard({
             )}
           </section>
 
-          {/* Supabase Database Settings Info Card */}
-          <section className="shelf-section">
-            <div className="jam-members-shelf" style={{ background: 'linear-gradient(to right, rgba(0, 255, 204, 0.05), #00000000)', border: '1px solid rgba(0, 255, 204, 0.2)' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px' }}>
-                <CheckCircle style={{ color: 'var(--primary)' }} size={20} />
-                <h3 className="jam-members-title" style={{ margin: 0 }}>Supabase Grid Sync Status</h3>
-              </div>
-              
-              <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '12px', lineHeight: '1.4' }}>
-                NebulaSync's passwordless login connects to your Supabase project. If you want usernames to persist globally in the cloud:
-                Open your **Supabase dashboard**, navigate to the **SQL Editor**, and execute the following snippet:
-              </p>
 
-              <pre style={{
-                background: 'rgba(0, 0, 0, 0.4)',
-                border: '1px solid rgba(0, 255, 204, 0.1)',
-                padding: '12px',
-                borderRadius: '6px',
-                fontSize: '0.75rem',
-                color: 'var(--primary)',
-                fontFamily: 'monospace',
-                overflowX: 'auto',
-                marginBottom: '10px'
-              }}>
-{`create table if not exists public.users_data (
-  username text primary key,
-  avatar text,
-  password text, -- Optional, used for secure accounts
-  created_at timestamp with time zone default timezone('utc'::text, now()) not null
-);
-
-alter table public.users_data enable row level security;
-create policy "Allow public read/write" on public.users_data for all using (true) with check (true);`}
-              </pre>
-              
-              <span style={{ fontSize: '0.75rem', color: 'var(--text-sub)' }}>
-                *Note: If the table isn't created yet, NebulaSync automatically runs in failover mode on your local Express server, meaning the app remains 100% operational!
-              </span>
-            </div>
-          </section>
 
           {/* Suggested Tracks List (Renders Real-time New Releases) */}
           <section className="shelf-section">

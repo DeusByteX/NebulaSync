@@ -1,0 +1,23 @@
+{
+  "short_name": "NebulaSync",
+  "name": "NebulaSync Collaborative Music Grid",
+  "description": "Premium cybernetic spaceship music jam player.",
+  "icons": [
+    {
+      "src": "favicon.svg",
+      "sizes": "64x64 32x32 24x24 16x16",
+      "type": "image/svg+xml"
+    },
+    {
+      "src": "icons.svg",
+      "sizes": "192x192 512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "start_url": ".",
+  "display": "standalone",
+  "theme_color": "#03000a",
+  "background_color": "#03000a",
+  "orientation": "portrait"
+}

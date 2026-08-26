@@ -4,5 +4,11 @@
     "password": "killergod",
     "avatar": "https://api.dicebear.com/7.x/pixel-art/svg?seed=Midnight",
     "createdAt": "2026-08-26T17:54:50.928Z"
+  },
+  "aditya": {
+    "username": "aditya",
+    "password": "aditya",
+    "avatar": "https://api.dicebear.com/7.x/pixel-art/svg?seed=Midnight",
+    "createdAt": "2026-08-26T19:43:54.713Z"
   }
 }

@@ -7,6 +7,6 @@
     "server": "npm --prefix server start",
     "client": "npm --prefix client run dev",
     "dev": "npx concurrently \"npm run server\" \"npm run client\"",
-    "build": "npm install --prefix client && npm run build --prefix client && mv client/dist dist"
+    "build": "node scripts/build.js"
   }
 }

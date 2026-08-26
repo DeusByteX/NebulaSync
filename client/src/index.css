@@ -1811,28 +1811,44 @@ input, textarea {
     display: none; /* Hide category headers */
   }
   
-  .sidebar-btn {
-    flex-direction: column;
-    gap: 4px;
-    font-size: 0.7rem;
-    padding: 6px 12px;
-    align-items: center;
-    flex-grow: 1;
-    background: none;
-  }
-  
-  .sidebar-btn span {
-    font-size: 0.65rem;
-    text-transform: uppercase;
-  }
-  
-  .sidebar-btn svg {
-    width: 20px !important;
-    height: 20px !important;
+  .sidebar-nav-card {
+    display: flex !important;
+    flex-direction: row !important;
+    width: 100% !important;
+    justify-content: space-around !important;
+    background: none !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    gap: 0 !important;
   }
 
-  .sidebar-footer {
-    display: none; /* Hide footer/logout to save space */
+  .sidebar-item {
+    flex-direction: column !important;
+    gap: 4px !important;
+    font-size: 0.7rem !important;
+    padding: 6px 12px !important;
+    align-items: center !important;
+    flex-grow: 1 !important;
+    background: none !important;
+    border-left: none !important; /* Remove desktop left indicator border */
+  }
+  
+  .sidebar-item span {
+    font-size: 0.65rem !important;
+    text-transform: uppercase !important;
+  }
+  
+  .sidebar-item svg {
+    width: 20px !important;
+    height: 20px !important;
+    margin: 0 !important;
+  }
+
+  .sidebar-footer,
+  .library-section,
+  .create-room-btn {
+    display: none !important; /* Hide library, footer, and room builder actions to keep nav bar clean */
   }
 
   /* Force 2-column card grid reflows on mobile */

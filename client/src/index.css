@@ -1776,3 +1776,141 @@ input, textarea {
     display: none;
   }
 }
+
+@media (max-width: 768px) {
+  .app-container {
+    grid-template-columns: 1fr;
+    grid-template-rows: 1fr var(--player-height) 65px; /* bottom row for bottom nav */
+    height: 100vh;
+    width: 100vw;
+    overflow: hidden;
+  }
+  
+  /* Collapse left sidebar to bottom menu bar */
+  .sidebar {
+    grid-row: 3;
+    grid-column: 1;
+    flex-direction: row;
+    justify-content: space-around;
+    align-items: center;
+    padding: 8px 12px;
+    height: 65px;
+    border-right: none;
+    border-top: 1px solid var(--border);
+    backdrop-filter: blur(25px);
+    overflow: hidden;
+    gap: 0;
+  }
+  
+  .sidebar-logo {
+    display: none; /* Hide logo on bottom menu */
+  }
+  
+  .sidebar-section-title {
+    display: none; /* Hide category headers */
+  }
+  
+  .sidebar-btn {
+    flex-direction: column;
+    gap: 4px;
+    font-size: 0.7rem;
+    padding: 6px 12px;
+    align-items: center;
+    flex-grow: 1;
+    background: none;
+  }
+  
+  .sidebar-btn span {
+    font-size: 0.65rem;
+    text-transform: uppercase;
+  }
+  
+  .sidebar-btn svg {
+    width: 20px !important;
+    height: 20px !important;
+  }
+
+  .sidebar-footer {
+    display: none; /* Hide footer/logout to save space */
+  }
+
+  /* Reflow player bar on mobile screen heights */
+  .music-player-bar {
+    padding: 8px 16px;
+    height: 100px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    justify-content: center;
+    border-top: 1px solid var(--border);
+  }
+
+  .player-left {
+    width: 100%;
+    justify-content: space-between;
+  }
+  
+  .player-center {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .player-right {
+    display: none; /* Hide volume controls to conserve mobile space */
+  }
+  
+  .player-time {
+    display: none; /* Hide timestamps on small sliders */
+  }
+
+  .player-controls {
+    gap: 20px;
+  }
+  
+  /* Reflow main view */
+  .main-content {
+    padding: 16px;
+    overflow-y: auto;
+  }
+  
+  /* Jam Room layout stacks vertically */
+  .jam-room-layout {
+    flex-direction: column;
+    height: 100%;
+    overflow-y: auto;
+    gap: 16px;
+  }
+  
+  .jam-room-main {
+    height: auto;
+    overflow: visible;
+  }
+  
+  .jam-chat-panel {
+    width: 100%;
+    height: 380px;
+    border-left: none;
+    border-top: 1px solid var(--border);
+    margin-top: 16px;
+    flex-shrink: 0;
+  }
+  
+  .jam-card-hero {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 16px;
+    padding: 20px;
+  }
+  
+  .jam-hero-art {
+    width: 150px;
+    height: 150px;
+  }
+  
+  .modal-content {
+    width: 92%;
+    padding: 24px 16px;
+  }
+}
+

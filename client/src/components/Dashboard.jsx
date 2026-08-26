@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Search, Play, Plus, Trash2, Send, MessageSquare, CheckCircle, Disc, Copy, Lock, Unlock, QrCode, TrendingUp, Music, Sparkles } from 'lucide-react';
+import { getBackendUrl } from '../config';
 
 const GENRES = [
   { name: 'Pop Hits', color: '#8d67ab' },
@@ -51,8 +52,8 @@ export default function Dashboard({
   useEffect(() => {
     setLoadingFeeds(true);
     Promise.all([
-      fetch('http://localhost:3001/api/music/trending').then(res => res.json()).catch(() => ({ results: [] })),
-      fetch('http://localhost:3001/api/music/new-releases').then(res => res.json()).catch(() => ({ results: [] }))
+      fetch(`${getBackendUrl()}/api/music/trending`).then(res => res.json()).catch(() => ({ results: [] })),
+      fetch(`${getBackendUrl()}/api/music/new-releases`).then(res => res.json()).catch(() => ({ results: [] }))
     ])
       .then(([trendingData, newData]) => {
         if (trendingData.results) {
@@ -77,7 +78,7 @@ export default function Dashboard({
       setSearchLoading(true);
       try {
         const response = await fetch(
-          `http://localhost:3001/api/music/search?query=${encodeURIComponent(searchQuery)}`
+          `${getBackendUrl()}/api/music/search?query=${encodeURIComponent(searchQuery)}`
         );
         const data = await response.json();
         
@@ -102,7 +103,7 @@ export default function Dashboard({
     }
     setSearchLoading(true);
     try {
-      const response = await fetch('http://localhost:3001/api/music/resolve', {
+      const response = await fetch(`${getBackendUrl()}/api/music/resolve`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ title: track.title, artist: track.artist }),
@@ -136,7 +137,7 @@ export default function Dashboard({
     }
     setSearchLoading(true);
     try {
-      const response = await fetch('http://localhost:3001/api/music/resolve', {
+      const response = await fetch(`${getBackendUrl()}/api/music/resolve`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ title: track.title, artist: track.artist }),

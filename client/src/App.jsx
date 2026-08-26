@@ -6,6 +6,7 @@ import Dashboard from './components/Dashboard';
 import MusicPlayer from './components/MusicPlayer';
 import Login from './components/Login';
 import { Bell, X } from 'lucide-react';
+import { getBackendUrl } from './config';
 
 export default function App() {
   const [user, setUser] = useState(() => {
@@ -46,7 +47,7 @@ export default function App() {
       return;
     }
 
-    const socketUrl = 'http://localhost:3001';
+    const socketUrl = getBackendUrl();
     console.log('Connecting to socket server at:', socketUrl);
     const newSocket = io(socketUrl, {
       transports: ['websocket'],

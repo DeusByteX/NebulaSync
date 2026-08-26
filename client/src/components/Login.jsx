@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { supabase } from '../supabaseClient';
 import { Shield, User, HelpCircle } from 'lucide-react';
+import { getBackendUrl } from '../config';
 
 const AVATAR_SEEDS = [
   'Midnight', 'Starlight', 'Vibe', 'Beat', 
@@ -13,6 +14,18 @@ export default function Login({ onLogin }) {
   const [selectedAvatar, setSelectedAvatar] = useState(AVATAR_SEEDS[0]);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [serverUrl, setServerUrlState] = useState(getBackendUrl());
+  const [showServerConfig, setShowServerConfig] = useState(false);
+
+  const handleServerUrlChange = (e) => {
+    const val = e.target.value;
+    setServerUrlState(val);
+    if (!val.trim()) {
+      localStorage.removeItem('NEBULA_API_URL');
+    } else {
+      localStorage.setItem('NEBULA_API_URL', val.trim());
+    }
+  };
 
   const getAvatarUrl = (seed) => {
     return `https://api.dicebear.com/7.x/pixel-art/svg?seed=${seed}`;
@@ -120,7 +133,7 @@ export default function Login({ onLogin }) {
 
   const fallbackLocalAuth = async (usernameVal, passwordVal, avatarUrlVal) => {
     try {
-      const response = await fetch('http://localhost:3001/api/auth/login-username', {
+      const response = await fetch(`${getBackendUrl()}/api/auth/login-username`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
@@ -229,6 +242,44 @@ export default function Login({ onLogin }) {
             {loading ? 'INITIATING GRID...' : 'ENTER NEBULA GRID'}
           </button>
         </form>
+
+        <div style={{ marginTop: '20px', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '12px', textAlign: 'center' }}>
+          <button
+            type="button"
+            onClick={() => setShowServerConfig(!showServerConfig)}
+            style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+          >
+            <span>⚙️</span>
+            <span>{showServerConfig ? 'Hide Gateway Settings' : 'Configure Backend Server Node'}</span>
+          </button>
+          
+          {showServerConfig && (
+            <div style={{ marginTop: '10px', textAlign: 'left', animation: 'slide-in 0.2s ease' }}>
+              <label style={{ fontSize: '0.7rem', color: 'var(--primary)', display: 'block', marginBottom: '4px', textTransform: 'uppercase' }}>
+                Backend Gateway Endpoint
+              </label>
+              <input
+                type="text"
+                value={serverUrl}
+                onChange={handleServerUrlChange}
+                placeholder="http://localhost:3001"
+                style={{
+                  width: '100%',
+                  padding: '8px 12px',
+                  borderRadius: '6px',
+                  backgroundColor: 'rgba(0,0,0,0.5)',
+                  border: '1px solid var(--border)',
+                  color: 'white',
+                  fontSize: '0.8rem',
+                  outline: 'none'
+                }}
+              />
+              <span style={{ fontSize: '0.65rem', color: 'var(--text-sub)', marginTop: '4px', display: 'block' }}>
+                *Leave empty to auto-connect to localhost on port 3001.
+              </span>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

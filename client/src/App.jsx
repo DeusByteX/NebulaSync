@@ -10,8 +10,14 @@ import { getBackendUrl } from './config';
 
 export default function App() {
   const [user, setUser] = useState(() => {
-    const saved = localStorage.getItem('spotify_jam_user');
-    return saved ? JSON.parse(saved) : null;
+    try {
+      const saved = localStorage.getItem('spotify_jam_user');
+      return saved ? JSON.parse(saved) : null;
+    } catch (e) {
+      console.warn('Failed to parse cached user login:', e);
+      localStorage.removeItem('spotify_jam_user');
+      return null;
+    }
   });
 
   const [view, setView] = useState('home'); // 'home', 'search', 'jam'

@@ -191,7 +191,32 @@ export default function Dashboard({
       .finally(() => setLoadingFeeds(false));
   }, []);
 
-  // Handle Search API calls (Debounced to 150ms for snappy loading)
+  // Direct client-side iTunes Search API fallback (works on HTTPS, no backend needed)
+  const searchItunes = async (query) => {
+    try {
+      const res = await fetch(
+        `https://itunes.apple.com/search?term=${encodeURIComponent(query)}&media=music&entity=song&limit=25`
+      );
+      const data = await res.json();
+      if (data.results && data.results.length > 0) {
+        return data.results.map(item => ({
+          trackId: `itunes-${item.trackId}`,
+          title: item.trackName,
+          artist: item.artistName,
+          album: item.collectionName || 'Single',
+          coverArt: item.artworkUrl100 ? item.artworkUrl100.replace('100x100bb', '400x400bb') : '',
+          audioUrl: item.previewUrl || '',
+          durationMs: item.trackTimeMillis || 30000,
+          source: 'itunes'
+        }));
+      }
+    } catch (e) {
+      console.warn('iTunes Search API failed:', e.message);
+    }
+    return [];
+  };
+
+  // Handle Search API calls (Debounced to 300ms)
   useEffect(() => {
     if (!searchQuery.trim()) {
       setSearchResults([]);
@@ -201,30 +226,58 @@ export default function Dashboard({
     const delayDebounceFn = setTimeout(async () => {
       setSearchLoading(true);
       try {
+        // 1. Try Express backend search first
         const response = await fetch(
           `${getBackendUrl()}/api/music/search?query=${encodeURIComponent(searchQuery)}`
         );
         const data = await response.json();
         
-        if (data.results) {
+        if (data.results && data.results.length > 0) {
           setSearchResults(data.results);
+          setSearchLoading(false);
+          return;
         }
       } catch (err) {
-        console.error('Search failed:', err);
-      } finally {
-        setSearchLoading(false);
+        console.warn('Backend search unavailable, falling back to iTunes Search API...', err.message);
       }
-    }, 150);
+
+      // 2. Fallback: query iTunes Search API directly from the browser (HTTPS, CORS-safe)
+      const itunesResults = await searchItunes(searchQuery);
+      setSearchResults(itunesResults);
+      setSearchLoading(false);
+    }, 300);
 
     return () => clearTimeout(delayDebounceFn);
   }, [searchQuery]);
 
-  // Play a song card with dynamic YouTube stream resolution
+  // Play a song card with dynamic YouTube stream resolution (falls back to audioUrl on mobile)
   const handlePlayClick = async (track) => {
     if (track.youtubeId) {
       onPlaySong(track);
       return;
     }
+
+    // If we already have an audioUrl (e.g. from iTunes preview), play it directly
+    if (track.audioUrl) {
+      onPlaySong(track);
+      // Also try to resolve YouTube ID in background for full-length playback
+      try {
+        const response = await fetch(`${getBackendUrl()}/api/music/resolve`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ title: track.title, artist: track.artist }),
+        });
+        const data = await response.json();
+        if (data.youtubeId) {
+          onPlaySong({ ...track, youtubeId: data.youtubeId, audioUrl: data.audioUrl || track.audioUrl, durationMs: data.durationMs || track.durationMs });
+        }
+      } catch (e) {
+        // Backend unreachable — continue playing preview, this is fine
+      }
+      return;
+    }
+
+    // No audioUrl yet — must resolve from backend
     setSearchLoading(true);
     try {
       const response = await fetch(`${getBackendUrl()}/api/music/resolve`, {
@@ -233,30 +286,37 @@ export default function Dashboard({
         body: JSON.stringify({ title: track.title, artist: track.artist }),
       });
       const data = await response.json();
-      if (data.youtubeId) {
-        onPlaySong({
-          ...track,
-          youtubeId: data.youtubeId,
-          audioUrl: data.audioUrl,
-          durationMs: data.durationMs
-        });
-      } else {
-        onPlaySong({
-          ...track,
-          audioUrl: track.audioUrl || data.audioUrl,
-          durationMs: track.durationMs || data.durationMs
-        });
-      }
+      onPlaySong({
+        ...track,
+        youtubeId: data.youtubeId || '',
+        audioUrl: data.audioUrl || track.audioUrl || '',
+        durationMs: data.durationMs || track.durationMs
+      });
     } catch (err) {
-      console.error('Failed to resolve playback stream:', err);
+      console.warn('Resolve failed, playing track as-is:', err.message);
+      onPlaySong(track);
     } finally {
       setSearchLoading(false);
     }
   };
 
   const handleAddToQueueClick = async (track) => {
-    if (track.youtubeId) {
+    if (track.youtubeId || track.audioUrl) {
       onAddToQueue(track);
+      // Background resolve if possible
+      if (!track.youtubeId) {
+        try {
+          const response = await fetch(`${getBackendUrl()}/api/music/resolve`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ title: track.title, artist: track.artist }),
+          });
+          const data = await response.json();
+          if (data.youtubeId) {
+            onAddToQueue({ ...track, youtubeId: data.youtubeId, audioUrl: data.audioUrl || track.audioUrl, durationMs: data.durationMs || track.durationMs });
+          }
+        } catch (e) { /* continue with preview */ }
+      }
       return;
     }
     setSearchLoading(true);
@@ -267,22 +327,15 @@ export default function Dashboard({
         body: JSON.stringify({ title: track.title, artist: track.artist }),
       });
       const data = await response.json();
-      if (data.youtubeId) {
-        onAddToQueue({
-          ...track,
-          youtubeId: data.youtubeId,
-          audioUrl: data.audioUrl,
-          durationMs: data.durationMs
-        });
-      } else {
-        onAddToQueue({
-          ...track,
-          audioUrl: track.audioUrl || data.audioUrl,
-          durationMs: track.durationMs || data.durationMs
-        });
-      }
+      onAddToQueue({
+        ...track,
+        youtubeId: data.youtubeId || '',
+        audioUrl: data.audioUrl || track.audioUrl || '',
+        durationMs: data.durationMs || track.durationMs
+      });
     } catch (err) {
-      console.error('Failed to resolve queue stream:', err);
+      console.warn('Resolve failed, queuing track as-is:', err.message);
+      onAddToQueue(track);
     } finally {
       setSearchLoading(false);
     }

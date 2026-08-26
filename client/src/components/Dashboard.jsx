@@ -250,38 +250,42 @@ export default function Dashboard({
     return () => clearTimeout(delayDebounceFn);
   }, [searchQuery]);
 
-  // Play a song card with synchronous mobile gesture playback & background YouTube resolution
-  const handlePlayClick = (track) => {
-    // 1. Immediately trigger playback synchronously inside the tap gesture!
-    const immediateTrack = {
-      ...track,
-      audioUrl: track.audioUrl || 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3'
-    };
-    onPlaySong(immediateTrack);
+  // Play a song card directly with full-length YouTube video stream
+  const handlePlayClick = async (track) => {
+    // 1. If YouTube ID is already resolved, play full track immediately!
+    if (track.youtubeId) {
+      onPlaySong(track);
+      return;
+    }
 
-    // 2. If YouTube ID is already present, no background resolve needed
-    if (track.youtubeId) return;
-
-    // 3. Background stream resolution to upgrade to full-length YouTube video
-    fetch(`${getBackendUrl()}/api/music/resolve`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ title: track.title, artist: track.artist }),
-    })
-      .then((res) => res.json())
-      .then((data) => {
-        if (data && (data.youtubeId || data.audioUrl)) {
-          onPlaySong({
-            ...track,
-            youtubeId: data.youtubeId || '',
-            audioUrl: data.audioUrl || immediateTrack.audioUrl,
-            durationMs: data.durationMs || track.durationMs || 240000
-          });
-        }
-      })
-      .catch((err) => {
-        console.warn('Background stream resolve failed, continuing with active stream:', err.message);
+    // 2. Otherwise, resolve full song video ID first (takes ~250ms), then play directly!
+    setSearchLoading(true);
+    try {
+      const response = await fetch(`${getBackendUrl()}/api/music/resolve`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title: track.title, artist: track.artist }),
       });
+      const data = await response.json();
+      
+      const fullTrack = {
+        ...track,
+        youtubeId: data.youtubeId || '',
+        audioUrl: data.audioUrl || track.audioUrl || 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3',
+        durationMs: data.durationMs || track.durationMs || 240000
+      };
+
+      // Play resolved full song directly from 0:00
+      onPlaySong(fullTrack);
+    } catch (err) {
+      console.warn('Resolve failed, playing track directly:', err.message);
+      onPlaySong({
+        ...track,
+        audioUrl: track.audioUrl || 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3'
+      });
+    } finally {
+      setSearchLoading(false);
+    }
   };
 
   const handleAddToQueueClick = async (track) => {

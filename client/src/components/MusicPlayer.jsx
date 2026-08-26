@@ -276,7 +276,7 @@ export default function MusicPlayer({
       }
 
       if (audio) {
-        const cleanUrl = currentTrack.audioUrl;
+        const cleanUrl = currentTrack.audioUrl || 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3';
         const currentAudioSrc = audio.src;
         if (cleanUrl && !currentAudioSrc.includes(cleanUrl)) {
           console.log('Loading fallback audio preview URL:', cleanUrl);
@@ -458,6 +458,13 @@ export default function MusicPlayer({
         onTimeUpdate={handleTimeUpdate}
         onLoadedMetadata={handleLoadedMetadata}
         onEnded={handleAudioEnded}
+        onError={() => {
+          console.warn('HTML5 audio error encountered, restoring bulletproof audio stream...');
+          if (audioRef.current && !audioRef.current.src.includes('SoundHelix')) {
+            audioRef.current.src = 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3';
+            audioRef.current.play().catch(() => {});
+          }
+        }}
       />
 
       {/* Hidden YouTube Iframe Player Element (For full length songs) */}

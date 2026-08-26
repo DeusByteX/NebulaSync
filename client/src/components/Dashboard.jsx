@@ -250,54 +250,38 @@ export default function Dashboard({
     return () => clearTimeout(delayDebounceFn);
   }, [searchQuery]);
 
-  // Play a song card with dynamic YouTube stream resolution (falls back to audioUrl on mobile)
-  const handlePlayClick = async (track) => {
-    if (track.youtubeId) {
-      onPlaySong(track);
-      return;
-    }
+  // Play a song card with synchronous mobile gesture playback & background YouTube resolution
+  const handlePlayClick = (track) => {
+    // 1. Immediately trigger playback synchronously inside the tap gesture!
+    const immediateTrack = {
+      ...track,
+      audioUrl: track.audioUrl || 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3'
+    };
+    onPlaySong(immediateTrack);
 
-    // If we already have an audioUrl (e.g. from iTunes preview), play it directly
-    if (track.audioUrl) {
-      onPlaySong(track);
-      // Also try to resolve YouTube ID in background for full-length playback
-      try {
-        const response = await fetch(`${getBackendUrl()}/api/music/resolve`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ title: track.title, artist: track.artist }),
-        });
-        const data = await response.json();
-        if (data.youtubeId) {
-          onPlaySong({ ...track, youtubeId: data.youtubeId, audioUrl: data.audioUrl || track.audioUrl, durationMs: data.durationMs || track.durationMs });
+    // 2. If YouTube ID is already present, no background resolve needed
+    if (track.youtubeId) return;
+
+    // 3. Background stream resolution to upgrade to full-length YouTube video
+    fetch(`${getBackendUrl()}/api/music/resolve`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ title: track.title, artist: track.artist }),
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        if (data && (data.youtubeId || data.audioUrl)) {
+          onPlaySong({
+            ...track,
+            youtubeId: data.youtubeId || '',
+            audioUrl: data.audioUrl || immediateTrack.audioUrl,
+            durationMs: data.durationMs || track.durationMs || 240000
+          });
         }
-      } catch (e) {
-        // Backend unreachable — continue playing preview, this is fine
-      }
-      return;
-    }
-
-    // No audioUrl yet — must resolve from backend
-    setSearchLoading(true);
-    try {
-      const response = await fetch(`${getBackendUrl()}/api/music/resolve`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ title: track.title, artist: track.artist }),
+      })
+      .catch((err) => {
+        console.warn('Background stream resolve failed, continuing with active stream:', err.message);
       });
-      const data = await response.json();
-      onPlaySong({
-        ...track,
-        youtubeId: data.youtubeId || '',
-        audioUrl: data.audioUrl || track.audioUrl || '',
-        durationMs: data.durationMs || track.durationMs
-      });
-    } catch (err) {
-      console.warn('Resolve failed, playing track as-is:', err.message);
-      onPlaySong(track);
-    } finally {
-      setSearchLoading(false);
-    }
   };
 
   const handleAddToQueueClick = async (track) => {

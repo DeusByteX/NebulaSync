@@ -1,12 +1,12 @@
 import React from 'react';
 import { Share2, Volume2 } from 'lucide-react';
 
-export default function FriendsSidebar({ user, onlineUsers, activeRoom, onSendInvite }) {
+export default function FriendsSidebar({ user, onlineUsers, activeRoom, onSendInvite, className = '' }) {
   // Exclude the current user from the list
   const otherUsers = onlineUsers.filter(u => u.username !== user.username);
 
   return (
-    <aside className="friends-sidebar">
+    <aside className={`friends-sidebar ${className}`}>
       {/* Current User Card */}
       <div className="user-profile-badge">
         <img className="user-avatar" src={user.avatar} alt={user.username} />

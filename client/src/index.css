@@ -1924,6 +1924,8 @@ input, textarea {
   
   /* Reflow main view */
   .main-content {
+    grid-column: 1 !important; /* Force to snap to column 1 of mobile 1fr grid */
+    grid-row: 1 !important; /* Force to snap to row 1 of mobile 1fr grid */
     padding: 12px !important;
     overflow-y: auto;
   }
@@ -2009,5 +2011,63 @@ input, textarea {
     border-radius: 6px !important;
     object-fit: cover !important;
   }
+}
+
+/* Mobile Friends Toggle Button (Desktop hidden) */
+.mobile-friends-toggle {
+  display: none !important;
+}
+
+@media (max-width: 1100px) {
+  .mobile-friends-toggle {
+    display: flex !important;
+    position: fixed;
+    top: 16px;
+    right: 16px;
+    z-index: 80;
+    background-color: rgba(14, 8, 28, 0.85);
+    border: 1px solid var(--border-neon);
+    box-shadow: var(--neon-glow);
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    align-items: center;
+    justify-content: center;
+    color: var(--primary);
+    cursor: pointer;
+    backdrop-filter: blur(10px);
+    transition: all var(--transition-fast);
+  }
+
+  .mobile-friends-toggle:hover {
+    transform: scale(1.05);
+    box-shadow: 0 0 15px var(--primary);
+  }
+
+  /* Slide-in drawer overrides for friends list on smaller screens */
+  .friends-sidebar {
+    display: none !important;
+  }
+
+  .friends-sidebar.show-mobile-sidebar {
+    display: flex !important;
+    position: fixed !important;
+    top: 0 !important;
+    right: 0 !important;
+    width: 280px !important;
+    height: 100vh !important;
+    height: 100dvh !important;
+    z-index: 100 !important;
+    background-color: rgba(10, 5, 22, 0.96) !important;
+    border-left: 2px solid var(--border-neon) !important;
+    box-shadow: -10px 0 30px rgba(0, 0, 0, 0.6) !important;
+    padding: 24px 16px !important;
+    animation: slide-in-drawer 0.25s cubic-bezier(0.4, 0, 0.2, 1) forwards !important;
+  }
+}
+
+@keyframes slide-in-drawer {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
 }
 

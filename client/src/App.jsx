@@ -28,6 +28,7 @@ export default function App() {
   const [toasts, setToasts] = useState([]); // List of active invites
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [newRoomName, setNewRoomName] = useState('');
+  const [showMobileFriends, setShowMobileFriends] = useState(false);
   
   // Collaborative Reactions state
   const [reactions, setReactions] = useState([]);
@@ -377,6 +378,14 @@ export default function App() {
 
   return (
     <div className="app-container">
+      {/* Mobile Friends Sidebar Toggle Button */}
+      <button
+        onClick={() => setShowMobileFriends(!showMobileFriends)}
+        className="mobile-friends-toggle"
+        title="Toggle Online Users list"
+      >
+        <Users size={18} />
+      </button>
       {/* Toast Notification Overlay */}
       <div className="toast-container">
         {toasts.map((toast) => (
@@ -517,6 +526,7 @@ export default function App() {
         onlineUsers={onlineUsers}
         activeRoom={activeRoom}
         onSendInvite={handleSendInvite}
+        className={showMobileFriends ? 'show-mobile-sidebar' : ''}
       />
 
       {/* Bottom Music playback bar */}

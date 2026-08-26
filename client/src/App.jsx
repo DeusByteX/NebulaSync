@@ -5,7 +5,7 @@ import FriendsSidebar from './components/FriendsSidebar';
 import Dashboard from './components/Dashboard';
 import MusicPlayer from './components/MusicPlayer';
 import Login from './components/Login';
-import { Bell, X } from 'lucide-react';
+import { Bell, X, Users } from 'lucide-react';
 import { getBackendUrl } from './config';
 
 export default function App() {
